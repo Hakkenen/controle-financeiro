@@ -17,22 +17,22 @@ const categoriasFinanceiras = {
     "Bônus / Gratificações": ["Gratificações", "Prêmios no Trabalho"],
     "Investimentos": ["Dividendos", "Juros", "Resgate de Aplicações"],
     "Reembolsos": ["Empresa (ex: viagens)", "Plano de Saúde", "Outros"],
-    "Aluguéis / Venda de Bens": ["Aluguel de Imóveis", "Aluguel de Veículos", "Venda de Usados (celular, carro, etc.)"],
+    "Aluguéis / Venda de Bens": ["Aluguel de Imóveis", "Aluguel de Veículos", "Venda de Usados"],
     "Prêmios / Indenizações": ["Restituição de IR", "Seguros", "Loterias", "Outros Prêmios"]
   },
   despesas: {
     "Moradia": ["Aluguel", "Condomínio", "Luz", "Água", "Gás", "Internet", "Manutenção", "Telefone"],
-    "Alimentação & Compras": ["Supermercado", "Feira", "Restaurante", "Delivery", "Eletrônicos/Peças Pequenas"],
+    "Alimentação & Compras": ["Supermercado", "Feira", "Restaurante", "Delivery", "Eletrônicos"],
     "Transporte & Veículos": ["Combustível", "Transporte Público", "Manutenção", "Seguro", "Estacionamento"],
-    "Saúde & Cuidados Pessoais": ["Plano de Saúde", "Consultas", "Exames", "Remédios", "Academia", "Higiene Pessoal", "Procedimentos (cirurgias, etc.)", "Vestuário"],
-    "Educação & Desenvolvimento": ["Faculdade", "Cursos", "Livros", "Material Didático", "Equipamentos de Estudo (ex: Notebook)"],
+    "Saúde & Cuidados Pessoais": ["Plano de Saúde", "Consultas", "Exames", "Remédios", "Academia", "Higiene", "Procedimentos", "Vestuário"],
+    "Educação & Desenvolvimento": ["Faculdade", "Cursos", "Livros", "Material Didático", "Equipamentos"],
     "Lazer & Viagens": ["Passeios", "Cinema", "Shows", "Viagens", "Hobbies", "Jogos"],
     "Assinaturas & Serviços": ["Streaming", "Personal Trainer", "Softwares"],
-    "Presentes & Doações": ["Presentes", "Dízimos", "Caridade", "Ajuda a Terceiros", "Ofertas"],
+    "Presentes & Doações": ["Presentes", "Dízimos", "Caridade", "Ajuda a Terceiros"],
     "Impostos & Pagamentos Financeiros": ["Impostos", "Taxas Bancárias", "Juros", "Parcelamentos", "Empréstimos"],
     "Investimentos & Poupança": ["Aportes Mensais", "Reserva de Emergência", "Previdência"],
     "Outras Despesas": ["Gastos Imprevistos", "Despesas Únicas"],
-    "Vestuário": ["Roupas do dia a dia", "Calçados", "Acessórios", "Roupas íntimas", "Moda esportiva / Fitness", "Roupas sociais", "Perfumes", "Outros itens de vestuário"]
+    "Vestuário": ["Roupas", "Calçados", "Acessórios", "Perfumes"]
   }
 };
 
@@ -67,142 +67,111 @@ function preencherSubcategorias(tipo, categoriaSelecionada) {
 document.addEventListener("DOMContentLoaded", () => {
   preencherCategorias("despesas");
 
-  // Mostrar/ocultar campo de cartão
-  document.getElementById("meioPagamento").addEventListener("change", function () {
-    const meio = this.value;
-    const cartaoContainer = document.getElementById("cartaoContainer");
+  const meioPagamento = document.getElementById("meioPagamento");
+  const cartaoContainer = document.getElementById("cartaoContainer");
 
-    if (meio === "Cartão de Crédito" || meio === "Cartão de Débito") {
-      cartaoContainer.style.display = "block";
-    } else {
-      cartaoContainer.style.display = "none";
+  meioPagamento.addEventListener("change", function () {
+    const meio = this.value;
+    cartaoContainer.style.display = (meio === "Cartão de Crédito" || meio === "Cartão de Débito") ? "block" : "none";
+    if (meio !== "Cartão de Crédito" && meio !== "Cartão de Débito") {
       document.getElementById("cartao").value = "";
     }
   });
 
-  // Captura e salva a despesa
+  const formaPagamento = document.getElementById("formaPagamento");
+  const parcelasContainer = document.getElementById("parcelasContainer");
+  const dataInicialContainer = document.getElementById("dataInicialContainer");
+  const valorParcelaContainer = document.getElementById("valorParcelaContainer");
+  const qtdParcelasInput = document.getElementById("qtdParcelas");
+  const valorInput = document.getElementById("valor");
+  const valorParcela = document.getElementById("valorParcela");
+
+  formaPagamento.addEventListener("change", () => {
+    const isParcelado = formaPagamento.value === "Parcelado";
+    parcelasContainer.classList.toggle("d-none", !isParcelado);
+    dataInicialContainer.classList.toggle("d-none", !isParcelado);
+    valorParcelaContainer.classList.toggle("d-none", !isParcelado);
+  });
+
+  function calcularValorParcela() {
+    const valor = parseFloat(valorInput.value);
+    const parcelas = parseInt(qtdParcelasInput.value);
+    if (valor && parcelas && parcelas > 0) {
+      valorParcela.textContent = `R$ ${(valor / parcelas).toFixed(2)}`;
+    } else {
+      valorParcela.textContent = '';
+    }
+  }
+
+  valorInput.addEventListener("input", calcularValorParcela);
+  qtdParcelasInput.addEventListener("input", calcularValorParcela);
+
   document.getElementById("formDespesa").addEventListener("submit", function (event) {
     event.preventDefault();
 
     const descricao = document.getElementById("descricao").value.trim();
-    const valorBruto = document.getElementById("valor").value.trim();
-    const valor = parseFloat(valorBruto.replace(",", "."));
+    const valor = parseFloat(document.getElementById("valor").value);
     const data = document.getElementById("data").value;
     const categoria = document.getElementById("categoria").value;
     const subcategoria = document.getElementById("subcategoria").value;
-    const formaPagamento = document.getElementById("formaPagamento").value;
-    const meioPagamento = document.getElementById("meioPagamento").value;
+    const forma = formaPagamento.value;
+    const meio = meioPagamento.value;
     const cartao = document.getElementById("cartao").value;
 
-    if (!descricao || isNaN(valor) || !data || !categoria || !subcategoria || !formaPagamento || !meioPagamento) {
+    if (!descricao || isNaN(valor) || !data || !categoria || !subcategoria || !forma || !meio) {
       alert("Por favor, preencha todos os campos corretamente.");
       return;
     }
 
-    if ((meioPagamento === "Cartão de Crédito" || meioPagamento === "Cartão de Débito") && !cartao) {
+    if ((meio === "Cartão de Crédito" || meio === "Cartão de Débito") && !cartao) {
       alert("Selecione o cartão utilizado.");
       return;
     }
 
-    const novaDespesa = {
-      descricao,
-      valor,
-      data,
-      categoria,
-      subcategoria,
-      formaPagamento,
-      meioPagamento,
-      cartao: cartao || null
-    };
+    if (forma === "Parcelado") {
+      const qtdParcelas = parseInt(qtdParcelasInput.value);
+      const dataInicial = new Date(document.getElementById("dataInicial").value);
+      const valorUnitario = (valor / qtdParcelas).toFixed(2);
 
-    adicionarDespesa(novaDespesa);
+      for (let i = 0; i < qtdParcelas; i++) {
+        const dataParcela = new Date(dataInicial);
+        dataParcela.setMonth(dataParcela.getMonth() + i);
 
-    alert("Despesa salva com sucesso!");
-    document.getElementById("formDespesa").reset();
-    document.getElementById("subcategoria").innerHTML = "<option value=''>Selecione</option>";
-    document.getElementById("cartaoContainer").style.display = "none";
-  });
-});
-function gerarParcelas(valorTotal, qtdParcelas, dataInicial) {
-  const parcelas = [];
-  const valorParcela = (valorTotal / qtdParcelas).toFixed(2);
-  let data = new Date(dataInicial);
+        const despesa = {
+          descricao: `${descricao} - Parcela ${i + 1}/${qtdParcelas}`,
+          valor: parseFloat(valorUnitario),
+          data: dataParcela.toLocaleDateString('pt-BR'),
+          categoria,
+          subcategoria,
+          formaPagamento: forma,
+          meioPagamento: meio,
+          cartao: cartao || null
+        };
 
-  for (let i = 0; i < qtdParcelas; i++) {
-    const parcela = {
-      valor: valorParcela,
-      data: new Date(data),
-      descricao: `Parcela ${i + 1} de ${qtdParcelas}`
-    };
-    parcelas.push(parcela);
-
-    // Avança um mês
-    data.setMonth(data.getMonth() + 1);
-  }
-
-  return parcelas;
-}
-
-document.getElementById('tipoPagamento').addEventListener('change', function () {
-  const isParcelado = this.value === 'parcelado';
-  document.getElementById('campoParcelas').classList.toggle('d-none', !isParcelado);
-  document.getElementById('campoDataInicial').classList.toggle('d-none', !isParcelado);
-  document.getElementById('valorParcelaInfo').classList.toggle('d-none', !isParcelado);
-});
-
-const valorInput = document.getElementById('valor');
-const qtdParcelasInput = document.getElementById('qtdParcelas');
-const valorParcela = document.getElementById('valorParcela');
-
-function calcularValorParcela() {
-  const valor = parseFloat(valorInput.value);
-  const parcelas = parseInt(qtdParcelasInput.value);
-  if (valor && parcelas && parcelas > 0) {
-    valorParcela.textContent = `R$ ${(valor / parcelas).toFixed(2)}`;
-  } else {
-    valorParcela.textContent = '';
-  }
-}
-
-valorInput.addEventListener('input', calcularValorParcela);
-qtdParcelasInput.addEventListener('input', calcularValorParcela);
-
-document.getElementById('formDespesa').addEventListener('submit', function (e) {
-  e.preventDefault();
-
-  const descricao = document.getElementById('descricao').value;
-  const valorTotal = parseFloat(document.getElementById('valorTotal').value);
-  const tipoPagamento = document.getElementById('tipoPagamento').value;
-
-  if (tipoPagamento === 'parcelado') {
-    const qtdParcelas = parseInt(document.getElementById('qtdParcelas').value);
-    const dataInicial = new Date(document.getElementById('dataInicial').value);
-    const valorParcela = (valorTotal / qtdParcelas).toFixed(2);
-
-    for (let i = 0; i < qtdParcelas; i++) {
-      const dataParcela = new Date(dataInicial);
-      dataParcela.setMonth(dataParcela.getMonth() + i);
-
+        adicionarDespesa(despesa);
+      }
+    } else {
       const despesa = {
-        descricao: `${descricao} - Parcela ${i + 1}/${qtdParcelas}`,
-        valor: valorParcela,
-        data: dataParcela.toLocaleDateString('pt-BR')
+        descricao,
+        valor,
+        data,
+        categoria,
+        subcategoria,
+        formaPagamento: forma,
+        meioPagamento: meio,
+        cartao: cartao || null
       };
 
-      console.log('Despesa lançada:', despesa);
-      // Aqui você pode salvar no localStorage ou banco de dados
+      adicionarDespesa(despesa);
     }
-  } else {
-    const despesa = {
-      descricao,
-      valor: valorTotal,
-      data: new Date().toLocaleDateString('pt-BR')
-    };
-    console.log('Despesa à vista lançada:', despesa);
-    // Salvar despesa à vista
-  }
 
-  alert('Despesa registrada com sucesso!');
-  this.reset();
-  document.getElementById('valorParcela').textContent = '';
+    alert("Despesa registrada com sucesso!");
+    this.reset();
+    document.getElementById("subcategoria").innerHTML = "<option value=''>Selecione</option>";
+    cartaoContainer.style.display = "none";
+    parcelasContainer.classList.add("d-none");
+    dataInicialContainer.classList.add("d-none");
+    valorParcelaContainer.classList.add("d-none");
+    valorParcela.textContent = '';
+  });
 });
