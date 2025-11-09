@@ -123,3 +123,86 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("cartaoContainer").style.display = "none";
   });
 });
+function gerarParcelas(valorTotal, qtdParcelas, dataInicial) {
+  const parcelas = [];
+  const valorParcela = (valorTotal / qtdParcelas).toFixed(2);
+  let data = new Date(dataInicial);
+
+  for (let i = 0; i < qtdParcelas; i++) {
+    const parcela = {
+      valor: valorParcela,
+      data: new Date(data),
+      descricao: `Parcela ${i + 1} de ${qtdParcelas}`
+    };
+    parcelas.push(parcela);
+
+    // Avança um mês
+    data.setMonth(data.getMonth() + 1);
+  }
+
+  return parcelas;
+}
+
+document.getElementById('tipoPagamento').addEventListener('change', function () {
+  const isParcelado = this.value === 'parcelado';
+  document.getElementById('campoParcelas').classList.toggle('d-none', !isParcelado);
+  document.getElementById('campoDataInicial').classList.toggle('d-none', !isParcelado);
+  document.getElementById('valorParcelaInfo').classList.toggle('d-none', !isParcelado);
+});
+
+const valorInput = document.getElementById('valor');
+const qtdParcelasInput = document.getElementById('qtdParcelas');
+const valorParcela = document.getElementById('valorParcela');
+
+function calcularValorParcela() {
+  const valor = parseFloat(valorInput.value);
+  const parcelas = parseInt(qtdParcelasInput.value);
+  if (valor && parcelas && parcelas > 0) {
+    valorParcela.textContent = `R$ ${(valor / parcelas).toFixed(2)}`;
+  } else {
+    valorParcela.textContent = '';
+  }
+}
+
+valorInput.addEventListener('input', calcularValorParcela);
+qtdParcelasInput.addEventListener('input', calcularValorParcela);
+
+document.getElementById('formDespesa').addEventListener('submit', function (e) {
+  e.preventDefault();
+
+  const descricao = document.getElementById('descricao').value;
+  const valorTotal = parseFloat(document.getElementById('valorTotal').value);
+  const tipoPagamento = document.getElementById('tipoPagamento').value;
+
+  if (tipoPagamento === 'parcelado') {
+    const qtdParcelas = parseInt(document.getElementById('qtdParcelas').value);
+    const dataInicial = new Date(document.getElementById('dataInicial').value);
+    const valorParcela = (valorTotal / qtdParcelas).toFixed(2);
+
+    for (let i = 0; i < qtdParcelas; i++) {
+      const dataParcela = new Date(dataInicial);
+      dataParcela.setMonth(dataParcela.getMonth() + i);
+
+      const despesa = {
+        descricao: `${descricao} - Parcela ${i + 1}/${qtdParcelas}`,
+        valor: valorParcela,
+        data: dataParcela.toLocaleDateString('pt-BR')
+      };
+
+      console.log('Despesa lançada:', despesa);
+      // Aqui você pode salvar no localStorage ou banco de dados
+    }
+  } else {
+    const despesa = {
+      descricao,
+      valor: valorTotal,
+      data: new Date().toLocaleDateString('pt-BR')
+    };
+    console.log('Despesa à vista lançada:', despesa);
+    // Salvar despesa à vista
+  }
+
+  alert('Despesa registrada com sucesso!');
+  this.reset();
+  document.getElementById('valorParcela').textContent = '';
+});
